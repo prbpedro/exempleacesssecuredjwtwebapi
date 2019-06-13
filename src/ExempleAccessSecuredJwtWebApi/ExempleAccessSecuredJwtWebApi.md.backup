@@ -1,0 +1,153 @@
+# ASPNetCore - WebAPI JWT Token Consumer
+
+Através deste tutorial iremos criar um projeto <b>web-api</b> com o <i>framework</i> <b>aspnetcore 2.2</b> que deverá fazer a autenticação/autorização dos usuários através de um <i>issuer</i> <b>JWT</b> externo ([DotnetCoreIdentityServerJwtIssuer](https://git.serpro/ComponentesDotNet/dotnetcoreidentityserverjwtissuer/blob/master/src/DotnetCoreIdentityServerJwtIssuer/DotnetCoreIdentityServerJwtIssuer.md)) e acessar uma <b>web-api</b> segura ([SecuredJwtWebApi](https://git.serpro/ComponentesDotNet/securedjwtwebapi/blob/master/src/SecuredJwtWebApi/SecuredJwtWebApi.md)) separada do <i>Issuer</i>.
+
+Para tanto faremos uso do <i>framework</i> <b>ASPNetCore 2.2</b> e do editor de código fonte <b>Visual Studio Code</b>.
+
+## Criar um projeto web-api ASPNetCore 2.2
+
+1. Abra uma pasta que deverá conter o projeto a ser criado
+1. Crie um projeto web-api ASPNetCore 2.2 através do comando abaixo no terminal <b>Windows PowerShell</b> contido no <b>VS Code</b>.
+
+	```csharp
+    dotnet new webapi
+	```
+	
+### Editar classe Program.cs
+Incluir chamada ao método <i>UseUrls</i> no método <i>CreateWebHostBuilderconforme</i>. A execução deste método determina a URL de entrada do web-api e por padrão desabilita o HTTPS no Kestrel. Em um ambiente produtivo a aplicação deverá ser acessada via protocolo HTTPS.
+
+```csharp
+public static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
+            WebHost.CreateDefaultBuilder(args)
+                .UseStartup<Startup>()
+                .UseUrls("http://localhost:8000");
+```
+
+### Editar classe Startup.cs
+
+#### Alterar método de configuração da aplicação
+
+Iremos retirar as configurações relacionadas a segurança da aplicação (HTTP, HSTS), em ambientes produtivos os servidores web deverão assegurar os requisitos de segurança necessários ao acesso a esta <b>web-api</b>.
+
+```csharp
+public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+{
+    app.UseMvc();
+}
+```
+
+### Criar <i>controller</i> <b>AspNetCore MVC</b> para disponibilização de método de acesso a <b>web-api</b> segura
+
+Iremos criar um método que deverá fazer a autenticação/autorização dos usuários através de um <i>issuer</i> <b>JWT</b> externo ([DotnetCoreIdentityServerJwtIssuer](https://git.serpro/ComponentesDotNet/dotnetcoreidentityserverjwtissuer/blob/master/src/DotnetCoreIdentityServerJwtIssuer/DotnetCoreIdentityServerJwtIssuer.md)) e acessar uma <b>web-api</b> segura ([SecuredJwtWebApi](https://git.serpro/ComponentesDotNet/securedjwtwebapi/blob/master/src/SecuredJwtWebApi/SecuredJwtWebApi.md)) separada do <i>Issuer</i>.
+
+Será necessário criar a classe ResponseDto que representa o retorno da chamada ao <i>issuer</i> <b>JWT</b> conforme código abaixo:
+
+```csharp
+namespace ExempleAccessSecuredJwtWebApi.Dto
+{
+    public class ResponseDto
+    {
+        public bool Authorized {get; set;}
+
+        public string Created {get; set;}
+
+        public string Expires {get; set;}
+
+        public string AccessToken {get; set;}
+    }
+}
+```
+
+
+Criar a classe AccessSecuredWebApiController conforme código abaixo:
+
+```csharp
+using System.Collections.Generic;
+using System.Net;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Text;
+using ExempleAccessSecuredJwtWebApi.Dto;
+using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
+
+namespace ExempleAccessSecuredJwtWebApi.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    public class AccessSecuredWebApiController : ControllerBase
+    {
+        [HttpGet]
+        public ActionResult<IEnumerable<string>> Get()
+        {
+            ResponseDto responseDto;
+            using (HttpClient client = new HttpClient())
+            {
+                client.DefaultRequestHeaders.Accept.Clear();
+                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+                HttpResponseMessage respToken = client.PostAsync(
+                    "http://localhost:6000/api/Login", 
+                    new StringContent
+                    (
+                        JsonConvert.SerializeObject(new
+                        {
+                            Audience = "audience1",
+                            UserEmail = "admin@serpro.gov.br",
+                            UserPassword = "Sw0rdfi$h"
+                        }
+                    ), Encoding.UTF8, "application/json")
+                ).Result;
+
+                responseDto = (ResponseDto)respToken.Content.ReadAsAsync(typeof(ResponseDto)).Result;
+            }
+
+            string retornoAcessoOk;
+            HttpStatusCode retornoAcessoOkHttpStatusCode;
+            using (HttpClient client = new HttpClient())
+            {
+                client.DefaultRequestHeaders.Accept.Clear();
+                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", responseDto.AccessToken);
+                HttpResponseMessage respToken = client.GetAsync("http://localhost:7000/api/secured/administrador").Result;
+                retornoAcessoOkHttpStatusCode = respToken.StatusCode;
+                retornoAcessoOk = respToken.Content.ReadAsStringAsync().Result;
+            }
+
+            string retornoAcessoNok;
+            HttpStatusCode retornoAcessoNokHttpStatusCode;
+            using (HttpClient client = new HttpClient())
+            {
+                client.DefaultRequestHeaders.Accept.Clear();
+                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", responseDto.AccessToken);
+                HttpResponseMessage respToken = client.GetAsync("http://localhost:7000/api/secured/usuario").Result;
+                retornoAcessoNokHttpStatusCode = respToken.StatusCode;
+                retornoAcessoNok = respToken.Content.ReadAsStringAsync().Result;
+            }
+
+            return Ok(new {retornoAcessoOkHttpStatusCode = retornoAcessoOkHttpStatusCode, retornoAcessoOk = retornoAcessoOk, retornoAcessoNokHttpStatusCode = retornoAcessoNokHttpStatusCode, retornoAcessoNok = retornoAcessoNok});
+        }
+    }
+}
+```
+
+Agora podemos acessar o método GET da classe AccessSecuredWebApiController através do sítio <http://localhost:8000/api/AccessSecuredWebApi> passando no body da requisição o texto json abaixo (application/json):
+
+```json
+{
+	"Audience": "audience1",
+	"UserEmail": "admin@serpro.gov.br",
+	"UserPassword": "Sw0rdfi$h"
+} 
+```
+
+Deveremos ter uma resposta similar ao texto/json abaixo:
+
+```json
+{
+    "Authorized": true,
+    "Created": "2019-04-17 17:44:10.4575850Z",
+    "Expires": "2019-04-18 03:54:10.4575850Z",
+    "AccessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1bmlxdWVfbmFtZSI6WyIwMjlhZDAyNi1mZDZlLTQyMDctOTA5YS1mNzhjNjBmN2JlZjciLCJhZG1pbkBzZXJwcm8uZ292LmJyIl0sImlzcyI6Imh0dHA6Ly9sb2NhbGhvc3Q6NjAwMC8iLCJqdGkiOiIyNGZiMjEzNzg4MDY0MGZlYTA4NTQ2ZTBlNDhkZTQxMyIsInN1YiI6IjAyOWFkMDI2LWZkNmUtNDIwNy05MDlhLWY3OGM2MGY3YmVmNyIsImVtYWlsIjoiYWRtaW5Ac2VycHJvLmdvdi5iciIsImV4cCI6MTU1NTU1OTY1MCwibmJmIjoxNTU1NTIzMDUwLCJhdXRoX3RpbWUiOiIxNTU1NTIzMDUwIiwiYXVkIjoiYXVkaWVuY2UxIiwicm9sZSI6ImFkbWluaXN0cmFkb3IiLCJpYXQiOjE1NTU1MjMwNTB9.UR0XLqutQWhwPkSzcilwt-Yr2XD6Cvf11kpg8ZB3xxk"
+}
+```
