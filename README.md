@@ -2,17 +2,20 @@
 
 Through this tutorial you'll be able to create an ASPNetCore 2.2 WEB-API that will authenticate and authorize users through an external JWT issuer ([DotnetCoreIdentityServerJwtIssuer](https://github.com/prbpedro/dotnetcoreidentityserverjwtissuer)) and acess a secured WEB-API ([SecuredJwtWebApi](https://github.com/prbpedro/securedjwtwebapi)) apart from the mentioned issuer.
 
-## Criar um projeto web-api ASPNetCore 2.2
+## Creating an ASPNetCore 2.2 WEB-API project
 
-1. Abra uma pasta que deverá conter o projeto a ser criado
-1. Crie um projeto web-api ASPNetCore 2.2 através do comando abaixo no terminal <b>Windows PowerShell</b> contido no <b>VS Code</b>.
+1. Open the folder where you want the project to be in the VS Code
+1. Create an ASPNetCore 2.2 WEB-API project throw running the below command in the Windows PowerShell Terminal in the VS Code
 
 	```csharp
     dotnet new webapi
 	```
 	
-### Editar classe Program.cs
-Incluir chamada ao método <i>UseUrls</i> no método <i>CreateWebHostBuilderconforme</i>. A execução deste método determina a URL de entrada do web-api e por padrão desabilita o HTTPS no Kestrel. Em um ambiente produtivo a aplicação deverá ser acessada via protocolo HTTPS.
+### Editing the Program.cs class
+
+You must include the call to the method UseUrls in the CreateWebHostBuilder delegate method. The execution of this method disables the HTTPS protocol on Kestrel and defines the entry URL of the WEB-API project created. 
+
+In a productive environment the application must be acess throw the HTTPS protocol.
 
 ```csharp
 public static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
@@ -21,11 +24,11 @@ public static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
                 .UseUrls("http://localhost:8000");
 ```
 
-### Editar classe Startup.cs
+### Editing the Startup.cs class
 
-#### Alterar método de configuração da aplicação
+#### Modifying the application configuration method
 
-Iremos retirar as configurações relacionadas a segurança da aplicação (HTTP, HSTS), em ambientes produtivos os servidores web deverão assegurar os requisitos de segurança necessários ao acesso a esta <b>web-api</b>.
+Remove the application security configurations. In productive environments, the WEB servers must ensure the security requirements needed to access this WEB-API.
 
 ```csharp
 public void Configure(IApplicationBuilder app, IHostingEnvironment env)
@@ -34,7 +37,7 @@ public void Configure(IApplicationBuilder app, IHostingEnvironment env)
 }
 ```
 
-### Criar <i>controller</i> <b>AspNetCore MVC</b> para disponibilização de método de acesso a <b>web-api</b> segura
+### Creating an AspNetCore MVC Controller to provide the access methods to the secured WEB-API
 
 Iremos criar um método que deverá fazer a autenticação/autorização dos usuários através de um <i>issuer</i> <b>JWT</b> externo ([DotnetCoreIdentityServerJwtIssuer](https://git.serpro/ComponentesDotNet/dotnetcoreidentityserverjwtissuer/blob/master/src/DotnetCoreIdentityServerJwtIssuer/DotnetCoreIdentityServerJwtIssuer.md)) e acessar uma <b>web-api</b> segura ([SecuredJwtWebApi](https://git.serpro/ComponentesDotNet/securedjwtwebapi/blob/master/src/SecuredJwtWebApi/SecuredJwtWebApi.md)) separada do <i>Issuer</i>.
 
