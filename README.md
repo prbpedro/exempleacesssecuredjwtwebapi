@@ -39,9 +39,9 @@ public void Configure(IApplicationBuilder app, IHostingEnvironment env)
 
 ### Creating an AspNetCore MVC Controller to provide the access methods to the secured WEB-API
 
-Iremos criar um método que deverá fazer a autenticação/autorização dos usuários através de um <i>issuer</i> <b>JWT</b> externo ([DotnetCoreIdentityServerJwtIssuer](https://git.serpro/ComponentesDotNet/dotnetcoreidentityserverjwtissuer/blob/master/src/DotnetCoreIdentityServerJwtIssuer/DotnetCoreIdentityServerJwtIssuer.md)) e acessar uma <b>web-api</b> segura ([SecuredJwtWebApi](https://git.serpro/ComponentesDotNet/securedjwtwebapi/blob/master/src/SecuredJwtWebApi/SecuredJwtWebApi.md)) separada do <i>Issuer</i>.
+Create a method that will authenticate and authorize users through an external JWT issuer ([DotnetCoreIdentityServerJwtIssuer](https://github.com/prbpedro/dotnetcoreidentityserverjwtissuer)) and access a secured WEB-API ([SecuredJwtWebApi](https://github.com/prbpedro/securedjwtwebapi)) apart from the mentioned issuer.
 
-Será necessário criar a classe ResponseDto que representa o retorno da chamada ao <i>issuer</i> <b>JWT</b> conforme código abaixo:
+Create the class ResponseDto.cs that represents the call return of the JWT issuer as the below code:
 
 ```csharp
 namespace ExempleAccessSecuredJwtWebApi.Dto
@@ -58,9 +58,7 @@ namespace ExempleAccessSecuredJwtWebApi.Dto
     }
 }
 ```
-
-
-Criar a classe AccessSecuredWebApiController conforme código abaixo:
+Create the AccessSecuredWebApiController.cs class as the below code:
 
 ```csharp
 using System.Collections.Generic;
@@ -132,9 +130,9 @@ namespace ExempleAccessSecuredJwtWebApi.Controllers
 }
 ```
 
-Agora podemos acessar o método GET da classe AccessSecuredWebApiController através do sítio <http://localhost:8000/api/AccessSecuredWebApi>.
+Now you can call the GET method of the AccessSecuredWebApiController.cs class through the site <http://localhost:8000/api/AccessSecuredWebApi>.
 
-Deveremos ter uma resposta similar ao texto/json abaixo:
+The GET method should return A JSON text response similar to the below:
 
 ```json
 {
