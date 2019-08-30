@@ -1,4 +1,5 @@
 # ASPNetCore - WEB-API JWT Token Consumer
+[![Build Status](https://travis-ci.org/prbpedro/exempleacesssecuredjwtwebapi.svg?branch=master)](https://travis-ci.org/prbpedro/exempleacesssecuredjwtwebapi)
 
 Through this tutorial you'll be able to create an ASPNetCore 2.2 WEB-API that will authenticate and authorize users through an external JWT issuer ([DotnetCoreIdentityServerJwtIssuer](https://github.com/prbpedro/dotnetcoreidentityserverjwtissuer)) and acess a secured WEB-API ([SecuredJwtWebApi](https://github.com/prbpedro/securedjwtwebapi)) apart from the mentioned issuer.
 
